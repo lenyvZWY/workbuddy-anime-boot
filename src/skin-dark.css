@@ -1,0 +1,56 @@
+/* ==========================================================================
+ * WorkBuddy Anime Boot — ① 深色玻璃主题（总是注入）
+ * --------------------------------------------------------------------------
+ * 作用：把界面各处"不透明的底"改成半透明深色玻璃，让底层的
+ *      壁纸（见 ② skin-wallpaper.css）透出来，同时强制深色配色
+ *      （浅色文字）保证可读性。
+ *
+ * 注入位置：原版 index.html 第一个 </style> 之前。
+ *
+ * 为什么选择器写成 html:root 且全部加 !important？
+ *   WorkBuddy 自身的皮肤变量可能定义在其它选择器上，:root + !important
+ *   能确保我们的值最终生效（这是本项目实测有效的写法）。
+ *
+ * 透明度速查：颜色末尾两位十六进制是 Alpha（00 全透 ~ ff 全不透）
+ *   #090b1147 ≈ 28% 黑    #090b1173 ≈ 45% 黑    #ffffff1a ≈ 10% 白
+ * ========================================================================== */
+
+/* --- 根节点透明：壁纸才能被看见 --- */
+html, body, #root { background-color: transparent !important; }
+
+/* --- #root 抬到壁纸层之上（壁纸是 body::before，z-index:0） --- */
+#root { position: relative; z-index: 1; }
+
+/* --- 深色玻璃变量覆盖 --- */
+html:root, html:root body {
+  /* 让滚动条、表单控件等系统部件跟随深色 */
+  color-scheme: dark !important;
+
+  /* 文字：浅色，保证在深色玻璃上清晰可读 */
+  --vscode-editor-foreground: #e8eaf0 !important;
+  --vscode-foreground: #e8eaf0 !important;
+  --cb-text-primary: #eef0f5 !important;
+  --cb-text-secondary: #c6cbd8 !important;
+
+  /* 界面背景：半透明深色（数字越大越"黑"） */
+  --vscode-editor-background: transparent !important;   /* 编辑器区全透，全程露壁纸 */
+  --cb-content-background: #090b1133 !important;        /* 20% */
+  --cb-main-area-background: #090b1147 !important;      /* 28% */
+  --cb-bg-tertiary: #090b1152 !important;               /* 32% */
+  --cb-panel-bg-primary: #090b1152 !important;          /* 32% */
+  --cb-colleague-card-chat-bg: #090b1147 !important;    /* 28% */
+  --cb-bg-secondary: #090b1166 !important;              /* 40% */
+  --wb-sidebar-bg: #090b1166 !important;                /* 左侧栏 40% */
+  --cb-bg-primary: #090b1173 !important;                /* 45% */
+
+  /* 悬浮 / 选中态：用"白色半透明"叠加，保持玻璃质感 */
+  --cb-hover-bg: #ffffff1a !important;                  /* 10% 白 */
+  --cb-list-item-selected-bg: #ffffff26 !important;     /* 15% 白 */
+
+  /* 输入框 */
+  --cb-vscode-input-background: #090b1152 !important;
+  --vscode-input-background: #090b1152 !important;
+
+  /* 下拉/弹出菜单：保持高不透明度（否则文字叠在壁纸上读不清） */
+  --cb-dropdown-bg-color: #0b0d14f2 !important;         /* 95% */
+}

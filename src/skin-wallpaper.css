@@ -1,0 +1,31 @@
+/* ==========================================================================
+ * WorkBuddy Anime Boot — ② 壁纸铺底（media/wallpaper.jpg 存在时注入）
+ * --------------------------------------------------------------------------
+ * 用固定定位的伪元素铺满全屏显示壁纸，位于一切界面元素之下（z-index:0）。
+ *
+ * 上面叠一层深色渐变膜（linear-gradient），作用有二：
+ *   1) 把偏亮的壁纸"压暗"，让浅色文字在任何壁纸上都可读；
+ *   2) 上深下也深、中间略浅，形成影院式的层次感。
+ *
+ * 占位符：__APP_DIR__ 会被安装器替换成实际安装路径，例如
+ *         __APP_DIR__  →  E:/easy/WorkBuddy
+ * 壁纸文件位置： <安装目录>/resources/wb-wallpaper.jpg
+ *
+ * 想调深浅？改 linear-gradient 里的两个 alpha 值：
+ *   rgba(6,8,14,.42) 与 rgba(6,8,14,.52) —— 越大越暗。
+ * ========================================================================== */
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;                       /* 铺满整个视口 */
+  z-index: 0;                     /* 在所有内容之下 */
+  pointer-events: none;           /* 不拦截鼠标操作 */
+  background-color: #0b0d14;      /* 壁纸加载失败时的兜底底色（永远不白屏） */
+  background-image:
+    linear-gradient(rgba(6, 8, 14, .42), rgba(6, 8, 14, .52)),   /* 深色膜：上 → 下 */
+    url("local-file:///__APP_DIR__/resources/wb-wallpaper.jpg"); /* 壁纸本体 */
+  background-position: center center, center center;
+  background-size: cover, cover;  /* 等比裁切铺满，任何分辨率都不变形 */
+  background-repeat: no-repeat, no-repeat;
+}

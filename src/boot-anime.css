@@ -1,0 +1,112 @@
+/* ==========================================================================
+ * WorkBuddy Anime Boot — ③ 启动动漫样式（media/boot.mp4 存在时注入）
+ * --------------------------------------------------------------------------
+ * 背景知识：WorkBuddy 启动时显示的不是白屏，而是一个"骨架屏"
+ *          （#skeleton-root，由顶栏/侧栏/内容区/状态栏的灰色占位块组成），
+ *          等 React 主界面准备好后由 window.__removeSkeleton() 拆除。
+ *          所以"进入界面"就是骨架屏 —— 启动动漫就盖在它上面播放。
+ *
+ * 元素分工（由 ④ boot.js 动态创建）：
+ *   #wb-anime-bg     全屏 <video>，启动动画本体
+ *   #wb-anime-veil   视频上的渐变膜，上下略暗，衬托界面文字
+ *   #wb-anime-badge  底部居中的"正在进入"胶囊
+ *   #wb-anime-skip   右下角"点击 / Esc 跳过"
+ *
+ * 骨架屏加上 .wb-anime-on 类之后，各占位块切换为磨砂玻璃效果，
+ * 让"动漫 → 真实界面"的过渡自然不突兀。
+ * ========================================================================== */
+
+/* --- 骨架屏底色换成深色，避免视频加载前闪白 --- */
+#skeleton-root.wb-anime-on { background-color: #080a10 !important; }
+
+/* --- 全屏视频 --- */
+#wb-anime-bg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;              /* 等比裁切铺满，2K/4K 屏也不变形 */
+  z-index: 0;
+  pointer-events: none;
+  background: #080a10;
+}
+
+/* --- 视频上的渐变膜（顶部/底部略暗，保证角标清晰） --- */
+#wb-anime-veil {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: linear-gradient(180deg,
+    rgba(6, 8, 14, .58) 0%,
+    rgba(6, 8, 14, .16) 38%,
+    rgba(6, 8, 14, .52) 100%);
+}
+
+/* --- 骨架屏原有内容抬到视频之上 --- */
+#skeleton-root.wb-anime-on > .sk-titlebar,
+#skeleton-root.wb-anime-on > .sk-body,
+#skeleton-root.wb-anime-on > .sk-statusbar,
+#skeleton-root.wb-anime-on > #sk-overlay { position: relative; z-index: 2; }
+
+/* --- 顶栏 / 状态栏：浅色磨砂玻璃 --- */
+#skeleton-root.wb-anime-on > .sk-titlebar,
+#skeleton-root.wb-anime-on > .sk-statusbar {
+  background-color: rgba(255, 255, 255, .05) !important;
+  backdrop-filter: blur(16px);
+}
+
+/* --- 侧栏：深色磨砂玻璃（透出视频画面） --- */
+#skeleton-root.wb-anime-on .sk-sidebar {
+  background-color: rgba(10, 12, 20, .44) !important;
+  border-right-color: rgba(255, 255, 255, .10) !important;
+  backdrop-filter: blur(20px);
+}
+
+/* --- 侧栏占位块：浅色半透明，模拟"骨架"质感 --- */
+#skeleton-root.wb-anime-on .sk-sidebar-btn,
+#skeleton-root.wb-anime-on .sk-sidebar-item,
+#skeleton-root.wb-anime-on .sk-sidebar-section,
+#skeleton-root.wb-anime-on .sk-sidebar-chat { background-color: rgba(255, 255, 255, .13) !important; }
+
+/* --- 内容区：完全透明，露出视频 --- */
+#skeleton-root.wb-anime-on .sk-content { background-color: transparent !important; }
+
+/* --- 内容区占位块 --- */
+#skeleton-root.wb-anime-on .sk-content-title { background-color: rgba(255, 255, 255, .20) !important; }
+#skeleton-root.wb-anime-on .sk-content-tag { background-color: rgba(255, 255, 255, .14) !important; }
+#skeleton-root.wb-anime-on .sk-content-input {
+  background-color: rgba(255, 255, 255, .09) !important;
+  border-color: rgba(255, 255, 255, .30) !important;
+  backdrop-filter: blur(12px);
+}
+
+/* --- 骨架屏流光动画：换成亮色，在视频上更明显 --- */
+#skeleton-root.wb-anime-on .sk-shimmer {
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, .13) 50%, transparent 100%);
+}
+
+/* --- 底部"正在进入"胶囊 --- */
+#wb-anime-badge {
+  position: absolute; z-index: 5; left: 50%; bottom: 44px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px; white-space: nowrap;
+  font-family: "PingFang SC", system-ui, sans-serif; font-size: 13px; color: #fff;
+  padding: 8px 18px; border-radius: 999px;
+  background: rgba(12, 14, 22, .42);
+  border: 1px solid rgba(255, 255, 255, .18);
+  backdrop-filter: blur(12px);
+}
+#wb-anime-badge .wb-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: #ffcf6b; box-shadow: 0 0 10px #ffcf6b;
+  animation: wbap 1.1s ease-in-out infinite alternate;
+}
+@keyframes wbap { from { opacity: .4; } to { opacity: 1; } }
+
+/* --- 右下角"跳过"按钮 --- */
+#wb-anime-skip {
+  position: absolute; z-index: 6; right: 20px; bottom: 18px; cursor: pointer;
+  font-family: "PingFang SC", system-ui, sans-serif; font-size: 12px;
+  color: rgba(255, 255, 255, .82);
+  padding: 6px 14px; border-radius: 999px;
+  background: rgba(12, 14, 22, .40);
+  border: 1px solid rgba(255, 255, 255, .16);
+  backdrop-filter: blur(10px);
+  -webkit-app-region: no-drag;      /* 不挡住窗口拖动区域 */
+}
+#wb-anime-skip:hover { background: rgba(24, 28, 40, .62); }

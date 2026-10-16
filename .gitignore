@@ -1,0 +1,13 @@
+# 生成过程产生的临时预览帧（不属于发布内容）
+media/_preview_*.png
+
+# 开发/测试目录（不上传）
+_test/
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 看护运行时产生的日志（如果在本目录跑过）
+tools/*.log
+tools/backup-live/
