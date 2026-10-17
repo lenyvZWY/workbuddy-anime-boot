@@ -1,22 +1,52 @@
-# 复制这段提示词，让 AI 帮你复刻
+# 复制这段提示词，让你的 AI 帮你装
 
-> 本项目最初就是"一句话 + 两个视频"交给 AI（WorkBuddy / CodeBuddy 等）做出来的。
-> 下面这段提示词可以直接复制发给你的 AI 助手，让它帮你把 WorkBuddy 改成动漫启动。
-> 里面已经写全了所有关键坑点，AI 照着做基本一遍过。
+> 不用自己下载、解压、双击 —— 把下面任意一段发给 AI（WorkBuddy / CodeBuddy / 其他能执行命令的助手），
+> 它会自己从 GitHub 拉代码、找到你的 WorkBuddy、装好，然后叫你去重启。
+
+---
+
+## 🚀 方式一：让 AI 去 GitHub 下载并配好（推荐，复制即用）
+
+```text
+帮我装一个 WorkBuddy 动漫启动皮肤，你去 GitHub 下载并配置好：
+仓库地址：https://github.com/lenyvZWY/workbuddy-anime-boot
+
+请按这个流程做：
+1. 把仓库下载到我电脑上任意文件夹（git clone 或下载 ZIP 解压）。
+   ⚠️ 绝对不能放进 WorkBuddy 安装目录，也不要在安装目录里新建任何文件夹。
+2. 找到我电脑上 WorkBuddy 的安装目录（含 WorkBuddy.exe 和 resources\app.asar 的那一层）。
+   常见位置：C:\Users\<用户名>\AppData\Local\Programs\ 下面，或 D:\、E:\ 的独立文件夹。
+   找不到就全盘搜索 WorkBuddy.exe。
+3. 用 PowerShell 运行安装器：
+   powershell -NoProfile -ExecutionPolicy Bypass -File "<仓库目录>\install.ps1" -AppPath "<WorkBuddy安装目录>"
+4. 安装器会自动完成：读取我这台机器的版本要求 → 构建定制界面 → 三重校验（字节数/结构/标记）
+   → 备份原文件 → 写入 → 部署启动视频和壁纸 → 安装更新看护。
+5. 装完告诉我结果，并提醒我重启 WorkBuddy 看效果。
+6. 如果报错（尤其是"版本不匹配 / 字节数不一致 / 结构校验失败"），
+   千万不要强行覆盖，把报错原文发我。
+
+补充说明：
+- 这是本地界面美化，只修改 WorkBuddy 的 resources\app.asar.unpacked\renderer\index.html，
+  不联网、不传数据、不碰账号。
+- 如果 GitHub 下载失败或太慢，告诉我，我给你代理 / 镜像地址。
+- 装完后如果想还原：运行仓库里的 uninstall.cmd 即可恢复原版界面。
+```
 
 ---
 
 ## 🎬 一句话版（发视频 / 口播用）
 
 ```text
-帮我把 WorkBuddy 本体换成动漫启动皮肤：启动时全屏播放我给的视频，
-主界面用我给的图片当整屏壁纸 + 深色玻璃面板（侧栏、任务列表、聊天框全部透出背景），
-再附一个更新自愈看护和一键卸载还原。注意：直接改程序本体，不是外挂程序。
+去 GitHub 下载这个项目并帮我装好：
+https://github.com/lenyvZWY/workbuddy-anime-boot
+装完提醒我重启 WorkBuddy。
 ```
 
 ---
 
-## 📋 完整版（直接复制发给 AI）
+## 📋 方式二：不用现成包，让 AI 从零复刻
+
+> 适合想改成自己素材、自己效果的人。这段提示词里写全了所有坑点，AI 照着做基本一遍过。
 
 ```text
 帮我给 WorkBuddy 桌面端换一套动漫启动皮肤，直接改程序本体，不装外挂：
@@ -50,7 +80,9 @@ WorkBuddy 安装目录下 resources\app.asar.unpacked\renderer\index.html
 
 ## 💡 使用小贴士
 
-- **AI 执行到"读 asar 头部 / 字节数校验"时，一定要让它先确认这一步**，这是防白屏的核心。
+- **方式一最适合大多数人**：AI 全自动，出错也有兜底（安装器带三重校验和自动备份）。
+- 如果 AI 一时没搞清"安装目录在哪"，直接告诉它：`WorkBuddy.exe` 所在的文件夹就是。
 - 如果 AI 说"我给你做个启动器程序"，要纠正它：**直接改 WorkBuddy 本体里的界面文件**，不要外挂。
-- 素材（视频 / 壁纸）建议自己提供，或让 AI 生成原创素材 —— 别用影视、游戏片段，避免版权问题。
-- 遇到白屏先别慌：让 AI 用备份还原，或重装官方版本即可。
+- 安装器不挑版本：它会现场读取你电脑上 WorkBuddy 的字节数要求再构建，所以不同版本都能装。
+  但如果你这台机器版本差异太大导致校验失败，它会**拒绝写入**（防白屏），把报错发给作者即可。
+- 遇到白屏先别慌：运行 `uninstall.cmd` 还原，或重装官方版本。

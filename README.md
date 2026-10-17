@@ -79,7 +79,7 @@ WorkBuddy 是 Electron 应用，"启动时的进入界面"是一个叫**骨架�
 
 👉 **[docs/HOW-IT-WORKS.md](docs/HOW-IT-WORKS.md)** —— 想改代码 / 二创的必读
 👉 **[docs/CUSTOMIZE.md](docs/CUSTOMIZE.md)** —— 配色、透明度、时长等进阶自定义
-👉 **[docs/PROMPT.md](docs/PROMPT.md)** —— **不想用现成包？复制这段提示词，让 AI 帮你从头复刻** 🤖
+👉 **[docs/PROMPT.md](docs/PROMPT.md)** —— **懒得动手？复制这段提示词，让你的 AI 自己去 GitHub 下载装好** 🤖
 
 ## ❓ FAQ
 
