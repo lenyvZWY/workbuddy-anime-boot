@@ -3,6 +3,9 @@
 > 给 WorkBuddy 桌面端换上 **动漫启动动画 + 全屏壁纸背景 + 深色玻璃面板**
 > 一键安装 · 更新自动还原 · 一键卸载
 
+> 🤖 **把这行丢给 AI 就行**：`帮我装这个项目：https://github.com/lenyvZWY/workbuddy-anime-boot`
+> —— 它会读下面的说明，自己下载、定位安装目录、装好。完整指令见 [docs/PROMPT.md](docs/PROMPT.md)
+
 <img src="docs/preview.jpg" width="820" alt="启动动画效果">
 
 <img src="docs/preview-wallpaper.jpg" width="820" alt="壁纸背景效果">
@@ -29,6 +32,9 @@
 ```
 
 安装器会自动完成：定位安装目录 → 读取版本要求 → 实时构建 → 三重校验 → 备份 → 写入 → 部署素材 → 安装更新看护。
+
+> 🤖 **让 AI 装（无图形界面 / 命令行）**：
+> `powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1 -AppPath "<WorkBuddy安装目录>"`
 
 > 💡 安装器**不会**新建安装目录里的任何文件夹（只写 3 个文件），不会影响 WorkBuddy 官方更新。
 > 如果你的 WorkBuddy 装在特殊位置，可以拖文件夹到 `install.cmd` 上，或用命令行：`install.cmd -AppPath "D:\你的路径\WorkBuddy"`。
