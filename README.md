@@ -1,8 +1,9 @@
 # WorkBuddy Anime Boot
 
-> 🆕 **v1.1.0 · 新增「莱茵开屏」舞台**（[`rhine-boot/`](rhine-boot/)）——
+> 🆕 **v1.1.2 · 新增「莱茵开屏」舞台**（[`rhine-boot/`](rhine-boot/)）——
 > 不改 asar、不重打包，往 `renderer/index.html` 注入 ~2.8KB 接管逻辑，
-> 把 134KB 开屏载荷当**外挂脚本**加载，播完再放行 React。真机 5.8.3 已跑通。
+> 把 134KB 开屏载荷当**外挂脚本**加载，**开屏期间连 App 入口都扣住**（不下载不执行），
+> 播到最后一幕才放行。真机 5.8.3 已跑通；仍有轻微卡顿，已在文档里标注。
 > 想看实现路径 / 已知卡顿 / 参考来源，直接读 [`rhine-boot/README.md`](rhine-boot/README.md)。
 
 > 给 WorkBuddy 桌面端换上 **动漫启动动画 + 全屏壁纸背景 + 深色玻璃面板**
