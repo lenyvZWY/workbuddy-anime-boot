@@ -1,0 +1,60 @@
+/* ==========================================================================
+ * WorkBuddy Boot —— ① 视频舞台样式（默认舞台，素材：media/boot.mp4）
+ * --------------------------------------------------------------------------
+ * 视觉来自用户自己的仓库 lenyvZWY/workbuddy-anime-boot 的启动动画：
+ *   1920x1080 / 30fps / 6.0s —— 星云汇聚 → 光环亮起 → WorkBuddy 字标定格。
+ *   末帧是设计好的品牌定格，所以"应用还没就绪"时直接停在末帧，不循环重播。
+ *
+ * 元素分工（② stage-video.js 动态创建）：
+ *   #wbboot-stage    全屏黑底容器（挂在 body 上，才能独立淡出）
+ *   #wbboot-video    视频本体，object-fit: cover 铺满，2K/4K 屏不变形
+ *   .wbboot-bar      底部 2px 进度线（跟着 currentTime 走，给"正在启动"一个读数）
+ *   #wbboot-skip     右下角跳过
+ * ========================================================================== */
+
+#wbboot-stage {
+  position: fixed; inset: 0; z-index: 2147483000;
+  background: #080a12; overflow: hidden;
+  opacity: 1; transition: opacity .56s ease;
+  -webkit-app-region: drag;              /* 启动画面里也能拖窗口 */
+}
+#wbboot-stage.wbboot-out { opacity: 0; pointer-events: none; }
+
+/* --- 视频本体 --- */
+#wbboot-video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  object-fit: cover;                     /* 等比裁切铺满 */
+  background: #080a12;                   /* 解码前不闪白 */
+  pointer-events: none;
+}
+
+/* --- 底部进度线 --- */
+#wbboot-stage .wbboot-bar {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
+  background: rgba(255, 255, 255, .07);
+  pointer-events: none;
+}
+#wbboot-stage #wbboot-progress {
+  display: block; width: 100%; height: 100%;
+  transform: scaleX(0); transform-origin: 0 50%;
+  background: linear-gradient(90deg, #8ea2ff, #c9a3ff);
+  opacity: .8;
+  transition: transform .25s linear;
+}
+
+/* --- 跳过 --- */
+#wbboot-skip {
+  position: absolute; z-index: 6; right: 30px; bottom: 26px;
+  font: 12px/1 "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  letter-spacing: .04em; color: rgba(255, 255, 255, .34);
+  padding: 7px 15px; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .12); background: rgba(10, 14, 24, .35);
+  backdrop-filter: blur(8px);
+  -webkit-app-region: no-drag; transition: color .2s, border-color .2s, background .2s;
+}
+#wbboot-skip:hover {
+  color: rgba(255, 255, 255, .8);
+  border-color: rgba(142, 162, 255, .55);
+  background: rgba(30, 38, 66, .55);
+}

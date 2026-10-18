@@ -1,0 +1,98 @@
+/* ==========================================================================
+ * WorkBuddy 550C Boot —— ② 启动层样式（注入到原版 <style> 末尾）
+ * --------------------------------------------------------------------------
+ * 视觉来源：dsh-550c-boot / Voidpocket 的 550C 开机动画（流浪地球 2 量子计算机）
+ * 实现载体：<img src="local-file:///…/wb-550c-logo.svg">
+ *          —— 动画时间轴写在 SVG 自己的 <style> 里，零 JS、任意分辨率清晰。
+ *
+ * 元素分工（③ boot-550c.js 动态创建）：
+ *   #wbboot-stage  全屏黑场，固定定位压住骨架屏
+ *   .wb550c-scan   琥珀色 CRT 扫描线（叠在 logo 之上）
+ *   .wb550c-sweep  每 5.2s 一次向下扫过的亮带
+ *   .wb550c-core   居中：logo + “550C SYSTEM BOOT”打字机
+ *   .wb550c-hud    左右下角终端角标
+ *   #wbboot-skip   右下角跳过
+ * ========================================================================== */
+
+#wbboot-stage {
+  position: fixed; inset: 0; z-index: 2147483000;
+  display: flex; align-items: center; justify-content: center;
+  background: #050403; overflow: hidden;
+  opacity: 1; transition: opacity .56s ease;
+  -webkit-app-region: drag;              /* 启动画面里也能拖窗口 */
+}
+#wbboot-stage.wbboot-out { opacity: 0; pointer-events: none; }
+
+/* --- CRT 扫描线：叠在 logo 之上，才有"屏幕"质感 --- */
+#wbboot-stage .wb550c-scan {
+  position: absolute; inset: 0; z-index: 5; pointer-events: none;
+  background: repeating-linear-gradient(180deg,
+    rgba(232, 160, 32, .05) 0 1px, transparent 1px 3px);
+}
+
+/* --- 暗角：压住边缘，视线聚焦 logo --- */
+#wbboot-stage::after {
+  content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 46%, transparent 40%, rgba(0, 0, 0, .88) 100%);
+}
+
+/* --- 缓慢下扫的亮带 --- */
+#wbboot-stage .wb550c-sweep {
+  position: absolute; left: 0; right: 0; height: 120px; z-index: 2; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(232, 160, 32, .035), transparent);
+  animation: wb550c-sweep 5.2s linear infinite;
+}
+@keyframes wb550c-sweep { from { top: -160px; } to { top: 100%; } }
+
+/* --- 核心区 --- */
+#wbboot-stage .wb550c-core {
+  position: relative; z-index: 4; text-align: center; transform: translateY(2%);
+}
+#wb550c-logo {
+  display: block; width: min(660px, 68vw); height: auto; margin: 0 auto;
+  filter: drop-shadow(0 0 24px rgba(255, 255, 255, .05));
+}
+#wbboot-stage.wb550c-noimg #wb550c-logo { display: none; }
+
+/* --- 打字机文案：2.4s 开始，16 步逐字显形 --- */
+#wb550c-txt {
+  margin-top: 32px; display: flex; align-items: center; justify-content: center;
+  font: 12px/1 "Courier New", Courier, monospace;
+  letter-spacing: .46em; text-indent: .46em;
+  color: rgba(255, 255, 255, .5);
+}
+#wb550c-txt .wb550c-line {
+  white-space: nowrap;
+  clip-path: inset(0 100% 0 0); -webkit-clip-path: inset(0 100% 0 0);
+  animation: wb550c-type .52s steps(16, end) 2.4s forwards;
+}
+@keyframes wb550c-type { to { clip-path: inset(0 0 0 0); -webkit-clip-path: inset(0 0 0 0); } }
+#wb550c-txt .wb550c-cur {
+  display: inline-block; width: 7px; height: 13px; margin-left: 10px; background: #fff;
+  opacity: 0; animation: wb550c-blink 1s steps(1) 2.4s infinite;
+}
+@keyframes wb550c-blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+/* --- 角标 --- */
+#wbboot-stage .wb550c-hud {
+  position: absolute; z-index: 4; pointer-events: none;
+  font: 10.5px/1.6 "Courier New", Courier, monospace; letter-spacing: .28em;
+  color: rgba(232, 160, 32, .40);
+}
+#wbboot-stage .wb550c-tl { left: 34px; top: 30px; }
+#wbboot-stage .wb550c-bl { left: 34px; bottom: 30px; color: rgba(255, 255, 255, .20); }
+
+/* --- 跳过 --- */
+#wbboot-skip {
+  position: absolute; z-index: 6; right: 30px; bottom: 24px;
+  font: 12px/1 "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  letter-spacing: .04em; color: rgba(255, 255, 255, .32);
+  padding: 7px 15px; border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, .10); background: rgba(255, 255, 255, .03);
+  -webkit-app-region: no-drag; transition: color .2s, border-color .2s, background .2s;
+}
+#wbboot-skip:hover {
+  color: rgba(255, 255, 255, .75);
+  border-color: rgba(232, 160, 32, .5);
+  background: rgba(232, 160, 32, .08);
+}
