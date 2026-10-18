@@ -1,0 +1,17 @@
+# 换行与二进制：避免 clone 到不同平台时把 .cmd/.ps1 搞坏
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+*.bat  text eol=crlf
+
+# 素材
+*.mp4  binary
+*.jpg  binary
+*.png  binary
+*.gif  binary
+*.wav  binary
+
+# 代码里的大块 base64（演示页）不要被任何文本处理改动
+*.html text eol=lf
+*.js   text eol=lf
+*.css  text eol=lf
+*.svg  text eol=lf

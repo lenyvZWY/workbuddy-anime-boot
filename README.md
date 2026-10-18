@@ -1,5 +1,11 @@
 # WorkBuddy Anime Boot
 
+> 🆕 **v1.1.2 · 新增「莱茵开屏」舞台**（[`rhine-boot/`](rhine-boot/)）——
+> 不改 asar、不重打包，往 `renderer/index.html` 注入 ~2.8KB 接管逻辑，
+> 把 134KB 开屏载荷当**外挂脚本**加载，**开屏期间连 App 入口都扣住**（不下载不执行），
+> 播到最后一幕才放行。真机 5.8.3 已跑通；仍有轻微卡顿，已在文档里标注。
+> 想看实现路径 / 已知卡顿 / 参考来源，直接读 [`rhine-boot/README.md`](rhine-boot/README.md)。
+
 > 给 WorkBuddy 桌面端换上 **动漫启动动画 + 全屏壁纸背景 + 深色玻璃面板**
 > 一键安装 · 更新自动还原 · 一键卸载
 
@@ -15,6 +21,7 @@
 | 效果 | 说明 |
 | --- | --- |
 | 🎬 **启动动画** | 打开 WorkBuddy 时播放全屏动画，播完无缝进入主界面（点击 / Esc 可跳过） |
+| 🧪 **莱茵开屏**（v1.1.0） | 另一套启动画面：`rhine-boot/`，外挂脚本加载，三舞台可切（splash / video / 550c） |
 | 🌌 **全屏壁纸** | 整个界面透出你的壁纸 —— 包括会话列表、任务列表、侧栏 |
 | 🪟 **深色玻璃** | 面板自动变半透明深色磨砂，字迹清晰；下拉菜单保持不透明可读 |
 | 🔄 **更新自愈** | WorkBuddy 自动更新冲掉皮肤后，看护在 3 分钟内自动装回来 |
@@ -110,3 +117,10 @@ A: 当前一版一视频。想的话可以改造 `src/boot.js`（有完整注释
 ## 📄 License
 
 [MIT](LICENSE) · 仅供学习与个人美化使用，与 WorkBuddy 官方无关。
+
+## 参考与致谢
+
+- 莱茵开屏舞台的视觉与 4.5s 时间轴来自 **`dsh-rhine-splash`**（**DeepSeek Harness / dsh 插件生态**开源插件，MIT © 2026 **ArtemisFowl**），
+  本仓库只做 WorkBuddy 侧的外挂注入与放行适配。
+- 550C 备选舞台来自 **`yannicksong0106/dsh-550c-boot`**（MIT，同属 DeepSeek Harness 生态），字形原作者 `Voidpocket/html_550c`。
+- 与 WorkBuddy 官方无关；素材仅限个人本地美化。
