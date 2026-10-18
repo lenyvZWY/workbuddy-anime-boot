@@ -120,6 +120,9 @@
       fade();
     }
 
+    /* 注入时刻：用来估算"挂载开销"，预判载荷会不会降级（见 loadNext 之后） */
+    var tInject = Date.now();
+
     /* ---------- 加载外挂载荷（三级回退）----------
        ① 相对路径：index.html 在 resources/app.asar.unpacked/renderer/，
           资产在 resources/，所以是 ../../wb-rhine-splash.js。同源（'self'）即可，不依赖 CSP 里的协议白名单；
@@ -139,6 +142,33 @@
     }
 
     loadNext();
+
+    /* ---------- 预判降级：把 is-lite 提前到首帧，避免动画中途翻转 ----------
+       载荷自己会在 start() 后 400ms 采样帧间隔，p95 > 34ms 就加 is-lite。
+       但那个采样窗口正好和"挂载那 200ms 停顿"重叠 → 几乎必然超标，
+       于是它会在动画已经播了 ~700ms 时才翻转一次 —— 实测这一下会带来
+       一次全局样式重算 + 74vw 位图重栅格化，单帧 75ms（真机就是"卡一下"）。
+       终态本来就是 lite，所以：只要"挂载耗时"已经超过它自己的阈值(34ms)，
+       就在 #rhine-splash 插入的同一拍把 is-lite 打上 —— 首帧即降级，
+       不再有中途翻转，观感与载荷自己判定的结果一致。 */
+    var liteDone = false;
+    var liteTimer = null;
+
+    function preLite(el) {
+      if (liteDone || !el) return;
+      if (Date.now() - tInject <= 34) return;   /* 挂载够快 → 交给载荷自己判 */
+      liteDone = true;
+      try { el.classList.add('is-lite'); } catch (e) {}
+    }
+
+    try {
+      var mo = new MutationObserver(function () {
+        var el = document.getElementById('rhine-splash');
+        if (el) { preLite(el); mo.disconnect(); }
+      });
+      mo.observe(document.body || document.documentElement, { childList: true, subtree: true });
+      liteTimer = setTimeout(function () { try { mo.disconnect(); } catch (e) {} }, 4000);
+    } catch (e) {}
 
     window.addEventListener('keydown', onKey, true);
 
