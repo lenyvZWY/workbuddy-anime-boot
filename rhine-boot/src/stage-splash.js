@@ -49,6 +49,13 @@
     if ('|settings|conversation|im-merge-detail|developer-profile|global-search|image-viewer|office|'.indexOf('|' + kind + '|') > -1) return;
 
     var FADE = 380;      /* 与 CSS transition 对齐 */
+    /* App 入口的放行时刻（毫秒，从接管脚本执行算起）。
+       不能真的等"完全播完"：载荷要看到 #root 有子元素才退场，
+       而入口被扣住时 #root 永远是空的 → 会互相死等到 maxWait(8s)。
+       放行点定在最后一幕（Act C/D，数字与进度条都走完了），
+       这样 React 的启动开销落在"main 淡出 + 门扇分开"这段，
+       前 3.4 秒的主线程整段归动画。 */
+    var RELEASE_AT = 3400;
     var APPEAR = 2500;   /* 超出这个时间还没见到载荷 → 认定没起来 */
     var CAP = 12000;     /* 硬上限 */
 
@@ -65,6 +72,14 @@
 
     function stop() { if (tm) { clearInterval(tm); tm = null; } }
 
+    /* ---------- 释放 App 入口 ----------
+       真正的放行动作在 entry-gate.js（独立脚本，带 6s 看门狗），
+       这里只是"到点叫它一声"。不能把扣住的入口一直不放，
+       否则载荷等 #root 等不到、App 也永远不启动。 */
+    function bootApp(why) {
+      try { if (window.__wbBootApp) window.__wbBootApp(why); } catch (e) {}
+    }
+
     function pass() {
       if (passed) return;
       passed = true;
@@ -77,6 +92,7 @@
       out = true;
       bd.classList.add('wbboot-out');
       document.removeEventListener('keydown', onKey, true);
+      clearTimeout(releaseTimer);
       setTimeout(function () { try { bd.remove(); } catch (e) {} }, FADE + 80);
     }
 
@@ -94,6 +110,7 @@
       if (e.key !== 'Escape' && e.keyCode !== 27) return;
       if (done) return;
       done = true; stop(); wipe();
+      bootApp('skip');
       if (ready) pass();
       fade();
     }
@@ -102,6 +119,7 @@
     function onSplashGone() {
       seen = true;
       try { document.documentElement.setAttribute('data-wbboot', 'ok'); } catch (e) {}
+      bootApp('done');          /* 动画播完 → 这时才放 App 入口开始下载/执行 */
       if (ready) { pass(); fade(); }
       else { fade(); }        /* 应用还在启动：把骨架屏交还给它 */
     }
@@ -111,6 +129,7 @@
     function bail() {
       if (done) return;
       done = true; stop();
+      bootApp('bail');          /* 关键：动画失败绝不能把 App 扣死 */
       wipe();
       try {
         document.documentElement.setAttribute('data-wbboot', 'fallback-' + ci);
@@ -180,6 +199,9 @@
     };
 
     /* ---------- 主循环（100ms）---------- */
+    /* 到最后一幕就把 App 入口放出来（之后只等它把 #root 填上，载荷自己会退场） */
+    var releaseTimer = setTimeout(function () { bootApp('timeline'); }, RELEASE_AT);
+
     tm = setInterval(function () {
       var el = document.getElementById('rhine-splash');
       var el2 = document.getElementById('sk-overlay');
@@ -198,6 +220,8 @@
       var el3 = Date.now() - t0;
       if (!seen && el3 > APPEAR) { stop(); bail(); return; }
       if (el3 > CAP) { stop(); bail(); return; }
+      /* 万一 #rhine-splash 一直不消失（异常卡住），也在 8s 后放 App */
+      if (el3 > 8000 && !booted) bootApp('timeout');
     }, 100);
   } catch (e) {}
 })();

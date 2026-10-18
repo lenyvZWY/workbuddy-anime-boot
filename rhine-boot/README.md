@@ -52,6 +52,33 @@ var cands = [
 `toFileUrl` 会再拼成 `file:///…`）在行为上依赖实现细节。三条一起试，成本是几百字节，
 收益是不用赌。
 
+### 2.5 扣住 App 入口：让动画独占主线程（v1.1.2 新增）
+
+首屏入口是一个 **deferred module**：`<script type="module" crossorigin src="./assets/host-XXXX.js">`。
+module 是"解析完才执行"，所以构建期只改一个属性就能把它冻住：
+
+```html
+<!-- 构建期替换：type="module" → type="text/wb-deferred"，并加 data-wb-entry -->
+<script type="text/wb-deferred" crossorigin data-wb-entry src="./assets/host-XXXX.js"></script>
+```
+
+浏览器不认识这个 type，于是开屏期间它**既不下载也不执行** —— 前 3.4 秒的主线程整段归动画，
+不再和 React 抢。播到最后一幕时由 `src/entry-gate.js` 按原 src 重新注入一个真的 module。
+
+**为什么是 3.4 秒而不是"完全播完"**：载荷的退场条件是 `#root` 有子元素（`appReady()`），
+而入口被扣住时 `#root` 永远是空的 —— 真等"播完再放"会互相死等到 `maxWait`(8s)。
+所以放行点定在 Act C/D（数字、进度条都走完了），React 的启动开销落在
+"main 淡出 + 门扇分开"这段，观众看到的是：动画完整播完 → 门开 → 界面已经在下面了。
+
+放行有 4 条路径，任何一条断了 App 都照样起得来：
+
+| 触发 | 时机 |
+| --- | --- |
+| `timeline` | 3.4s 到点（正常路径） |
+| `skip` | 点击 / Esc 跳过 |
+| `bail` | 载荷没加载起来（2.5s 判定） |
+| `watchdog` | **独立脚本**里的 6s 看门狗 —— 主脚本整体在 try/catch 里，万一它挂了，这一条兜底 |
+
 ### 3. 时序与放行条件
 
 载荷自己的时间轴（4.5s）：
