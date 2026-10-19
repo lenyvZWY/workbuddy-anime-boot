@@ -6,6 +6,11 @@
 # "WorkBuddy 更新把皮肤冲掉了" 才会真正动作。
 #
 # 结束方式：运行 remove-autostart.cmd，或任务管理器结束该 powershell 进程。
+#
+# 【为什么看不到窗口】
+#   · 本脚本由 VBS 启动器以 window style 0（完全隐藏）拉起，不产生控制台；
+#   · 子进程用 Start-Process -WindowStyle Hidden 启动 —— 直接写
+#     "powershell -WindowStyle Hidden" 会先把控制台窗口创建出来再隐藏，仍会闪一下。
 # ==========================================================================
 $ErrorActionPreference = 'SilentlyContinue'
 
@@ -18,6 +23,8 @@ $log   = Join-Path $kit 'watcher.log'
 
 while ($true) {
     if (-not (Test-Path -LiteralPath $apply)) { break }   # 套件被删了就退出
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $apply
+    Start-Process -FilePath 'powershell.exe' `
+                  -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $apply) `
+                  -WindowStyle Hidden -Wait
     Start-Sleep -Seconds 180
 }

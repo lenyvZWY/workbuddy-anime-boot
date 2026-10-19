@@ -35,13 +35,20 @@ Write-Host '==============================================' -ForegroundColor Mag
 Step 1 '移除更新看护 ...'
 
 $startup = [Environment]::GetFolderPath('Startup')
-$cmdPath = Join-Path $startup 'WorkBuddyAnimeWatcher.cmd'
-if (Test-Path -LiteralPath $cmdPath) {
-    Remove-Item -LiteralPath $cmdPath -Force
-    Ok '开机自启项已删除'
-} else {
-    Warn '开机自启项不存在，跳过'
+# 兼容两代自启项：v1.0.1+ 用 .vbs（无窗口），旧版是 .cmd
+$autostartEntries = @(
+    (Join-Path $startup 'WorkBuddyAnimeWatcher.vbs'),
+    (Join-Path $startup 'WorkBuddyAnimeWatcher.cmd')
+)
+$removed = 0
+foreach ($p in $autostartEntries) {
+    if (Test-Path -LiteralPath $p) {
+        Remove-Item -LiteralPath $p -Force
+        Ok "开机自启项已删除: $(Split-Path -Leaf $p)"
+        $removed++
+    }
 }
+if ($removed -eq 0) { Warn '开机自启项不存在，跳过' }
 
 # 结束正在运行的看护进程
 try {

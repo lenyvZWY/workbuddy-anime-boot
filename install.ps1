@@ -341,14 +341,27 @@ if ($InstallWatcher) {
     [System.IO.File]::WriteAllText((Join-Path $wdir 'config.txt'), $app, (New-Object System.Text.UTF8Encoding($true)))
     Ok "看护套件 -> $wdir"
 
-    # 开机自启项
-    $startup = [Environment]::GetFolderPath('Startup')
-    $cmdPath = Join-Path $startup 'WorkBuddyAnimeWatcher.cmd'
-    $cmdText = '@echo off' + "`r`n" +
-               'start "" /b powershell -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "%USERPROFILE%\.workbuddy-anime\watcher\watch.ps1"' + "`r`n"
-    [System.IO.File]::WriteAllText($cmdPath, $cmdText, (New-Object System.Text.ASCIIEncoding))
-    Ok "开机自启已安装 -> $cmdPath"
-    Say '    （下次登录 Windows 后自动生效；现在想立刻启用，双击 tools\start-watcher.cmd）'
+    # 开机自启项：用 VBS 启动器（window style 0 = 完全隐藏，全程无黑窗）
+    # 旧方案是 .cmd 批处理 —— 每次开机必然弹出一闪而过的控制台窗口，已在 v1.0.1 废弃。
+    $startup   = [Environment]::GetFolderPath('Startup')
+    $watchFile = Join-Path $wdir 'watch.ps1'
+    $vbsText = "' WorkBuddy Anime Boot - silent watcher launcher`r`n" +
+               "' window style 0 = hidden, no console window at all`r`n" +
+               'Set sh = CreateObject("WScript.Shell")' + "`r`n" +
+               'sh.Run "powershell.exe -NoProfile -ExecutionPolicy Bypass -File ""' + $watchFile + '""", 0, False' + "`r`n"
+    # 用系统 ANSI 编码写：wscript 可直接读取，且能正确处理中文用户名路径
+    $vbsEnc = [System.Text.Encoding]::Default
+    $vbsPath = Join-Path $startup 'WorkBuddyAnimeWatcher.vbs'
+    [System.IO.File]::WriteAllText($vbsPath, $vbsText, $vbsEnc)
+    [System.IO.File]::WriteAllText((Join-Path $wdir 'start-watcher.vbs'), $vbsText, $vbsEnc)
+    # 清理旧版遗留的 .cmd 自启项，避免同时启动两个看护
+    $oldCmd = Join-Path $startup 'WorkBuddyAnimeWatcher.cmd'
+    if (Test-Path -LiteralPath $oldCmd) {
+        Remove-Item -LiteralPath $oldCmd -Force
+        Say '    已清理旧版 .cmd 自启项'
+    }
+    Ok "开机自启已安装（无窗口）-> $vbsPath"
+    Say '    （下次登录 Windows 后自动生效；现在想立刻启用，双击 start-watcher.vbs）'
 } else {
     Step 5 '跳过看护安装（未指定 -InstallWatcher）'
     Say '    建议加上该参数安装看护，WorkBuddy 更新后皮肤会自动恢复。'
