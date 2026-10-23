@@ -59,25 +59,64 @@ Write-Host '==============================================' -ForegroundColor Mag
 # ==========================================================================
 
 function Find-WorkBuddy {
-    <# 定位 WorkBuddy 安装目录：显式参数 → 运行中进程 → 常见路径 #>
+    <#
+      定位 WorkBuddy 安装目录，按可靠性从高到低依次尝试：
+        ① 显式参数 -AppPath
+        ② 正在运行的 WorkBuddy 进程（用户通常是开着 WorkBuddy 让 AI 装皮肤，命中率最高）
+        ③ 环境变量推导的常见位置（覆盖 Electron 默认的 AppData\Local\Programs）
+        ④ 各盘根目录常见位置
+        ⑤ 注册表卸载项 InstallLocation（覆盖用户自定义安装路径，最通用）
+        ⑥ Program Files / Programs 下的一层通配目录
+      每个候选都要通过「app.asar + unpacked\renderer\index.html 同时存在」才算命中。
+    #>
     param([string]$Hint)
     $candidates = New-Object System.Collections.Generic.List[string]
-    if ($Hint) { [void]$candidates.Add($Hint) }
+    if ($Hint) { [void]$candidates.Add($Hint.Trim().Trim('"').TrimEnd('\')) }
 
-    # ① 正在运行的 WorkBuddy 进程（最可靠）
+    # ② 正在运行的 WorkBuddy 进程
     try {
         Get-CimInstance Win32_Process -Filter "Name='WorkBuddy.exe'" -ErrorAction SilentlyContinue |
             ForEach-Object { if ($_.ExecutablePath) { [void]$candidates.Add((Split-Path -Parent $_.ExecutablePath)) } }
     } catch { }
 
-    # ② 常见安装位置
+    # ③ 环境变量推导（Electron 默认安装到 %LOCALAPPDATA%\Programs\WorkBuddy）
+    foreach ($base in @($env:LOCALAPPDATA, $env:APPDATA, $env:ProgramFiles, ${env:ProgramFiles(x86)}, $env:USERPROFILE)) {
+        if (-not $base) { continue }
+        foreach ($sub in @('WorkBuddy', 'Programs\WorkBuddy', 'Apps\WorkBuddy', 'easy\WorkBuddy', 'Software\WorkBuddy')) {
+            [void]$candidates.Add((Join-Path $base $sub))
+        }
+    }
+
+    # ④ 各盘根目录常见位置
     try {
         foreach ($drive in (Get-PSDrive -PSProvider FileSystem -ErrorAction SilentlyContinue).Root) {
-            foreach ($sub in @('WorkBuddy', 'easy\WorkBuddy', 'Apps\WorkBuddy', 'Program Files\WorkBuddy', 'Program Files (x86)\WorkBuddy', 'Programs\WorkBuddy')) {
+            foreach ($sub in @('WorkBuddy', 'easy\WorkBuddy', 'Apps\WorkBuddy', 'Program Files\WorkBuddy', 'Program Files (x86)\WorkBuddy', 'Programs\WorkBuddy', 'Software\WorkBuddy')) {
                 [void]$candidates.Add((Join-Path $drive $sub))
             }
         }
     } catch { }
+
+    # ⑤ 注册表卸载项（用户装到任何盘、任何文件夹都能找到）
+    foreach ($key in @(
+        'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*')) {
+        try {
+            Get-ItemProperty -Path $key -ErrorAction SilentlyContinue |
+                Where-Object { $_.DisplayName -like '*WorkBuddy*' -and $_.InstallLocation } |
+                ForEach-Object { [void]$candidates.Add($_.InstallLocation.TrimEnd('\')) }
+        } catch { }
+    }
+
+    # ⑥ 一层通配兜底
+    foreach ($base in @((Join-Path $env:LOCALAPPDATA 'Programs'), $env:ProgramFiles, ${env:ProgramFiles(x86)})) {
+        if (-not $base -or -not (Test-Path -LiteralPath $base)) { continue }
+        try {
+            Get-ChildItem -LiteralPath $base -Directory -ErrorAction SilentlyContinue |
+                Where-Object { $_.Name -like '*WorkBuddy*' } |
+                ForEach-Object { [void]$candidates.Add($_.FullName) }
+        } catch { }
+    }
 
     # 校验：必须同时存在 app.asar 与 unpacked 的 index.html
     foreach ($c in ($candidates | Select-Object -Unique)) {
@@ -296,6 +335,21 @@ if ($node) {
 # 4. 备份 + 写入 + 部署素材
 # ==========================================================================
 Step 4 '写入文件 ...'
+
+# 写入权限预检：装在 Program Files 等受保护位置的电脑需要管理员权限，
+# 否则后面的写入会以"拒绝访问"失败，用户看到的只是莫名报错。
+try {
+    $probe = [System.IO.File]::Open($target, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite)
+    $probe.Close()
+} catch {
+    Fail "没有写入权限: $target"
+    Say  '    解决办法：右键 install.cmd -> 以管理员身份运行'
+    exit 1
+}
+
+# WorkBuddy 正在运行时提示（写文件不受影响，但必须重启才能看到效果）
+$wbProc = Get-Process -Name 'WorkBuddy' -ErrorAction SilentlyContinue
+if ($wbProc) { Warn 'WorkBuddy 正在运行 —— 安装完成后请完全退出并重新打开才能看到效果' }
 
 if (-not (Test-Path -LiteralPath $bkDir)) { $null = New-Item -ItemType Directory -Path $bkDir -Force }
 $bkFile = Join-Path $bkDir 'index.html.orig'

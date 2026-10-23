@@ -34,31 +34,52 @@ Write-Host '==============================================' -ForegroundColor Mag
 # ==========================================================================
 Step 1 '移除更新看护 ...'
 
+# 多安装并存时的保护：看护是「全局一份」，只守护 config.txt 里记录的那个安装。
+# 如果这次卸载的是另一个目录（例如测试副本），绝不能把别人的看护一起删掉。
+$cfgApp = $null
+if (Test-Path -LiteralPath $cfg) {
+    try { $cfgApp = (Get-Content -LiteralPath $cfg -TotalCount 1 -Encoding UTF8).Trim() } catch { }
+}
+$watcherIsOurs = $false
+if (-not $AppPath) {
+    $watcherIsOurs = $true                                  # 没指定目标 = 按看护配置卸载，看护就是它的
+} elseif ($cfgApp -and $cfgApp.TrimEnd('\') -eq $AppPath.TrimEnd('\')) {
+    $watcherIsOurs = $true                                  # 指定的正是看护守护的那个安装
+}
+if (-not $watcherIsOurs) {
+    Warn "看护属于另一个安装，本次保留不动：$cfgApp"
+}
+
 $startup = [Environment]::GetFolderPath('Startup')
 # 兼容两代自启项：v1.0.1+ 用 .vbs（无窗口），旧版是 .cmd
-$autostartEntries = @(
-    (Join-Path $startup 'WorkBuddyAnimeWatcher.vbs'),
-    (Join-Path $startup 'WorkBuddyAnimeWatcher.cmd')
-)
-$removed = 0
-foreach ($p in $autostartEntries) {
-    if (Test-Path -LiteralPath $p) {
-        Remove-Item -LiteralPath $p -Force
-        Ok "开机自启项已删除: $(Split-Path -Leaf $p)"
-        $removed++
+# 注意：极少数环境（服务账户 / 精简系统）下 GetFolderPath('Startup') 会返回空，
+# 此时直接跳过，避免 Join-Path 抛异常中断卸载流程。
+if ($watcherIsOurs) {
+    $autostartEntries = @()
+    if ($startup) {
+        $autostartEntries += (Join-Path $startup 'WorkBuddyAnimeWatcher.vbs')
+        $autostartEntries += (Join-Path $startup 'WorkBuddyAnimeWatcher.cmd')
     }
-}
-if ($removed -eq 0) { Warn '开机自启项不存在，跳过' }
-
-# 结束正在运行的看护进程
-try {
-    Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue |
-        Where-Object { $_.CommandLine -like '*watch.ps1*' -or $_.CommandLine -like '*auto-apply.ps1*' } |
-        ForEach-Object {
-            Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
-            Ok "已结束看护进程 pid=$($_.ProcessId)"
+    $removed = 0
+    foreach ($p in $autostartEntries) {
+        if (Test-Path -LiteralPath $p) {
+            Remove-Item -LiteralPath $p -Force
+            Ok "开机自启项已删除: $(Split-Path -Leaf $p)"
+            $removed++
         }
-} catch { Warn "结束看护进程时出错: $_" }
+    }
+    if ($removed -eq 0) { Warn '开机自启项不存在，跳过' }
+
+    # 结束正在运行的看护进程
+    try {
+        Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue |
+            Where-Object { $_.CommandLine -like '*watch.ps1*' -or $_.CommandLine -like '*auto-apply.ps1*' } |
+            ForEach-Object {
+                Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
+                Ok "已结束看护进程 pid=$($_.ProcessId)"
+            }
+    } catch { Warn "结束看护进程时出错: $_" }
+}
 
 # ==========================================================================
 # 2. 定位安装目录
